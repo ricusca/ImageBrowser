@@ -29,7 +29,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -89,15 +89,22 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\ImageBrowser\curl\builds\libcurl-vc14-x86-release-static-ipv6-sspi-winssl\include;$(ProjectDir)\ImageBrowser\jsoncpp\dist;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\ImageBrowser\curl\builds\libcurl-vc14-x86-release-static-ipv6-sspi-winssl\include;$(ProjectDir)\ImageBrowser\jsoncpp\dist;$(ProjectDir)\ImageBrowser\SDL2-2.0.4\include;$(ProjectDir)\ImageBrowser\SDL2_image-2.0.1\include;$(ProjectDir)\ImageBrowser\SDL2_ttf-2.0.14\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)\ImageBrowser\curl\builds\libcurl-vc14-x86-release-static-ipv6-sspi-winssl\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libcurl_a.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)\ImageBrowser\curl\builds\libcurl-vc14-x86-release-static-ipv6-sspi-winssl\lib;$(ProjectDir)\ImageBrowser\SDL2-2.0.4\lib\x86;$(ProjectDir)\ImageBrowser\SDL2_image-2.0.1\lib\x86;$(ProjectDir)\ImageBrowser\SDL2_ttf-2.0.14\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libcurl_a.lib;SDL2.lib;SDL2main.lib;SDL2_image.lib;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2-2.0.4\lib\x86\SDL2.dll $(OutputPath)
+xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2_image-2.0.1\lib\x86\SDL2_image.dll $(OutputPath)
+xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2_image-2.0.1\lib\x86\libpng16-16.dll $(OutputPath)
+xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2_ttf-2.0.14\lib\x86\*.dll $(OutputPath)
+xcopy /F /R /Y /I $(ProjectDir)\fonts\*.ttf $(OutputPath)\fonts\</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -150,21 +157,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ImageBrowser\Browser.cpp" />
+    <ClCompile Include="ImageBrowser\Cell.cpp" />
     <ClCompile Include="ImageBrowser\DownloadFile.cpp" />
     <ClCompile Include="ImageBrowser\HttpClient.cpp" />
     <ClCompile Include="ImageBrowser\jsoncpp\dist\jsoncpp.cpp" />
     <ClCompile Include="ImageBrowser\main.cpp" />
+    <ClCompile Include="ImageBrowser\Renderer.cpp" />
     <ClCompile Include="ImageBrowser\Request.cpp" />
+    <ClCompile Include="ImageBrowser\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ImageBrowser\Browser.h" />
+    <ClInclude Include="ImageBrowser\Cell.h" />
     <ClInclude Include="ImageBrowser\defines.h" />
     <ClInclude Include="ImageBrowser\DownloadFile.h" />
     <ClInclude Include="ImageBrowser\HttpCallback.h" />
     <ClInclude Include="ImageBrowser\HttpClient.h" />
+    <ClInclude Include="ImageBrowser\IRenderable.h" />
+    <ClInclude Include="ImageBrowser\IRenderer.h" />
     <ClInclude Include="ImageBrowser\IRequest.h" />
     <ClInclude Include="ImageBrowser\jsoncpp\dist\json\json-forwards.h" />
     <ClInclude Include="ImageBrowser\jsoncpp\dist\json\json.h" />
+    <ClInclude Include="ImageBrowser\Renderer.h" />
+    <ClInclude Include="ImageBrowser\RendererFactory.h" />
     <ClInclude Include="ImageBrowser\Request.h" />
+    <ClInclude Include="ImageBrowser\Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,61 +1,120 @@
 #include "DownloadFile.h"
 #include "Request.h"
 #include "HttpClient.h"
-#include "json/json.h"
 #include <iostream>
 
 DownloadFile::DownloadFile()
-	:mstate(DOWNLOAD_REQUIRED)
+	:mstate(FileState::DOWNLOAD_REQUIRED)
+	, mFileName()
+	, mFullUrl()
+	, mData(nullptr)
+	, mSize(0)
+	, request(nullptr)
+{
+
+}
+
+DownloadFile::DownloadFile(const char* pFileName, const char* pFullUrl)
+	:mstate(FileState::DOWNLOAD_REQUIRED)
+	, mFileName(pFileName)
+	, mFullUrl(pFullUrl)
+	, mData(nullptr)
+	, mSize(0)
+	, request(nullptr)
 {
 }
 
+DownloadFile::DownloadFile( DownloadFile& file)
+{
+	mstate = file.mstate;
+	mFileName = file.mFileName;
+	mFullUrl = file.mFullUrl;
+	mData = file.mData; //yes, don't make a new one, share it
+	mSize = file.mSize;
+}
+
+DownloadFile& DownloadFile::operator=(DownloadFile file)
+{
+	Swap(*this,file);
+
+	return *this;
+}
+
+//copy and swap idiom, not very useful here
+void DownloadFile::Swap(DownloadFile& first, DownloadFile& second)
+{
+	using std::swap;
+
+	swap(first.mstate, second.mstate);
+	swap(first.mFileName, second.mFileName);
+	swap(first.mFullUrl, second.mFullUrl);
+	swap(first.mData, second.mData);
+	swap(first.mSize, second.mSize);
+}
 
 DownloadFile::~DownloadFile()
 {
+	delete [] mData;
+	mData = nullptr;
+
+	delete request;
+	request = nullptr;
 }
 
-void DownloadFile::Download(const char* url)
+void DownloadFile::Download()
 {
-	if (mstate == DOWNLOAD_REQUIRED)
+	if (mstate == FileState::DOWNLOAD_REQUIRED)
 	{
-		IRequest* r = new Request(this);
-		r->SetUrl(url);
-		HttpClient::GetInstance()->SubmitRequest(r);
-		mstate = DOWNLOADING;
+		if (request == nullptr)
+		{
+			request = new Request(this);
+		}
+		request->SetUrl(mFullUrl.c_str());
+		HttpClient::GetInstance()->SubmitRequest(request);
+		mstate = FileState::DOWNLOADING;
 	}
 }
 
-void DownloadFile::HttpSuccess(const char *pData, unsigned int uDataSize)
+bool DownloadFile::IsReadyForOpen() const
+{
+	return mstate == FileState::IN_MEMORY;
+}
+
+void DownloadFile::GetData(char** pData, uint32_t& dataSize) const
+{
+	*pData = mData;
+	dataSize = mSize;
+}
+
+const std::string& DownloadFile::GetName() const
+{
+	return mFileName;
+}
+
+void DownloadFile::SetFullURL(const char* pURL)
+{
+	mFullUrl = pURL;
+}
+
+void DownloadFile::Free()
+{
+	mstate = FileState::IS_FREE;
+}
+
+void DownloadFile::HttpSuccess(const char *pData, uint32_t uDataSize)
 {
 	mData = new char[uDataSize];
 	memcpy_s(mData, uDataSize, pData, uDataSize);
-	mstate = IN_MEMORY;
-
-	Json::Value root;
-	Json::Reader reader;
-	bool bResult = reader.parse(pData, pData + uDataSize*sizeof(char), root);
-	if (bResult == false)
-	{
-		std::cout << "Failed to parse response\n"
-			<< reader.getFormattedErrorMessages() << std::endl << pData << std::endl;
-		return;
-	}
-
-	std::string title = root.get("title","My list").asString();
-	std::string baseUrl = root.get("baseUrl","!!!empty url!!!").asString();
-
-	std::cout << title << std::endl << baseUrl << std::endl;
-
-	const Json::Value images = root["images"];
-	for (size_t idx = 0; idx < images.size(); ++idx)
-		std::cout << images[idx].asString() << std::endl;
-
+	mSize = uDataSize;
+	mstate = FileState::IN_MEMORY;
 
 	//std::cout << pData << std::endl;
 }
 
-void DownloadFile::HttpFailure(int iCode, const char* msg)
+void DownloadFile::HttpFailure(int32_t iCode, const char* msg)
 {
-	fprintf(stderr, "curl_easy_perform() failed: %s\n",msg);
+	std::cerr << "curl_easy_perform() failed: " << msg;
+
+	mstate = FileState::FAILED_DOWNLOAD;
 
 }

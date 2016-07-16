@@ -1,6 +1,6 @@
 #pragma once
 
-enum HttpMethod
+enum class HttpMethod
 {
 	HTTP_GET = 0,   
 	HTTP_POST,      
@@ -9,7 +9,7 @@ enum HttpMethod
 	HTTP_HEAD       
 };
 
-enum HttpErrorCode
+enum class HttpErrorCode
 {
 	HTTP_ERROR_OK = 0,                          //No error occurred.
 
@@ -26,7 +26,7 @@ enum HttpErrorCode
 	HTTP_ERROR_UNKNOWN                          //!< Unknown error.
 };
 
-enum FileState
+enum class FileState
 {
 	IS_FREE = 0,
 	DOWNLOAD_REQUIRED,

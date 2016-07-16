@@ -4,26 +4,31 @@
 #include <string>
 #include "HttpCallback.h"
 
-const int HttpClient::NUM_THREADS = 1;
+const int8_t HttpClient::NUM_THREADS = 1;
+const int64_t HttpClient::MAX_IMG_SIZE = 150000;
 
 HttpClient* HttpClient::mInstance = nullptr;
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) 
 {
 	std::string data((const char*)ptr, (size_t)size * nmemb);
-	*((std::stringstream*)stream) << data << std::endl;
+	HttpClient::DownloadData* d = reinterpret_cast<HttpClient::DownloadData*>(stream);
+
+	memcpy_s(d->buffer+d->offset, HttpClient::MAX_IMG_SIZE, ptr, size * nmemb);
+	d->offset += size * nmemb;
+
 	return size * nmemb;
 }
 
 HttpClient::HttpClient()
 	:mThreadTerminate(false)
 {
-	mThreads.resize(NUM_THREADS);
-	for (auto& t : mThreads)
+	mCurls.resize(NUM_THREADS);
+	for (auto& c : mCurls)
 	{
-		CURL* c = curl_easy_init();
-		mCurls.push_back(c);
-		t = std::thread([&,this] { this->Update(c); });		
+		c.curl = curl_easy_init();
+		c.buffer = new char[MAX_IMG_SIZE];
+		c.threadId = std::thread([&, this] { this->Update(c); });
 	}
 }
 
@@ -57,10 +62,12 @@ void HttpClient::SubmitRequest(IRequest* request)
 }
 
 //download -- consumer
-void HttpClient::Update(CURL* curl)
+void HttpClient::Update(DownloadData& downloadData)
 {
 	while (!mThreadTerminate)
 	{
+		CURL* curl = downloadData.curl;
+		downloadData.Reset();
 		
 		IRequest* request = nullptr;
 		std::unique_lock<std::mutex> lock(mMutex);
@@ -74,9 +81,9 @@ void HttpClient::Update(CURL* curl)
 		curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 		curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1); //Prevent "longjmp causes uninitialized stack frame" bug
 		curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "deflate");
-		std::stringstream out;
+
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &downloadData);
 		/* Perform the request, res will get the return code */
 		CURLcode res = curl_easy_perform(curl);
 		/* Check for errors */
@@ -86,25 +93,30 @@ void HttpClient::Update(CURL* curl)
 		}
 		else
 		{
-			request->GetCallback()->HttpSuccess(out.str().c_str(), out.str().length());
+			request->GetCallback()->HttpSuccess(downloadData.buffer, downloadData.offset);
+
+			FILE * pFile;
+
+			fopen_s(&pFile, "myfile1.png", "wb");
+			fwrite(downloadData.buffer, sizeof(char), downloadData.offset, pFile);
+			fclose(pFile);
 		}
+		
 	}
 }
 
 void HttpClient::Clean()
 {
-	for (auto& c : mCurls)
-	{
-		curl_easy_cleanup(c);
-	}
-	mCurls.clear();
 
 	mThreadTerminate = true;
-	for (auto& t : mThreads)
+	for (auto& t : mCurls)
 	{
-		t.join();
+		t.threadId.join();
+		delete[] t.buffer;
+		curl_easy_cleanup(t.curl);
 	}		
 	mCurls.clear();
+
 }
 
 void HttpClient::Terminate()

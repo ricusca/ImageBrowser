@@ -5,7 +5,7 @@
 
 Request::Request(HttpCallback* callback)
 	:IRequest()
-	, mMethod(HTTP_GET)
+	, mMethod(HttpMethod::HTTP_GET)
 	, mUrl("")
 	, mCallback(callback)
 {
