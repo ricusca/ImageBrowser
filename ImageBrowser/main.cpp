@@ -11,13 +11,30 @@ const int32_t SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
 
 int main(int32_t argc, char** argv)
 {
-	FILELog::ReportingLevel() = FILELog::FromString(argv[2] ? argv[2] : "DEBUG1");
+	std::string logLevel = "DEBUG1";
+	if (argc > 2)
+	{
+		logLevel = argv[2];
+		
+	}
+	FILELog::ReportingLevel() = FILELog::FromString(logLevel);
 	for (int32_t i = 0; i < argc; ++i)
 	{
 		FILE_LOG(logINFO) << "arg" << i << ": " << argv[i];
 	}
+
+	std::string configPath = "http://imageviewer.yolasite.com/resources/Content.json";
+	if (argc < 2)
+	{
+		FILE_LOG(logERROR) << "You need to provide HTTP path to the json file. Using default until then" ;
+		FILE_LOG(logINFO) << "Default path is: http://imageviewer.yolasite.com/resources/Content.json";		
+	}
+	else
+	{
+		configPath = argv[1];
+	}
 	
-	Browser::GetInstance().Initialize(argv[1]);
+	Browser::GetInstance().Initialize(configPath.c_str());
 
 	//Quit event
 	bool quit = false;
