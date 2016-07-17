@@ -3,6 +3,15 @@ ImageBrowser
 
 URL:  https://github.com/ricusca/ImageBrowser
 
+Usage
+------------------
+
+ImageBrowser http_path_to_json_config [logLevel]
+
+	* logLevel can be: logERROR, logWARNING, logINFO, logDEBUG, logDEBUG1, logDEBUG2, logDEBUG3, logDEBUG4
+
+	* an url to a default config is used if http_path_to_json_config is not provided
+
 Technologies:
 ------------------
 - developed in C++ using Visual Studio 2015
@@ -29,7 +38,7 @@ What it does:
 Technical details
 -----------------
 
-1. Classes
+Classes
 
 *Timer 
 -used to compute number of ticks passed in order to obtain the framerate 

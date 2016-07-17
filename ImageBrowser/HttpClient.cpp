@@ -88,9 +88,9 @@ void HttpClient::Update(DownloadData& downloadData)
 
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &downloadData);
-		/* Perform the request, res will get the return code */
+		//Perform the request, res will get the return code
 		CURLcode res = curl_easy_perform(curl);
-		/* Check for errors */
+		// Check for errors 
 		if (res != CURLE_OK) 
 		{
 			request->GetCallback()->HttpFailure(static_cast<int32_t>(res), curl_easy_strerror(res));
