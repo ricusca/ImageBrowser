@@ -1,5 +1,7 @@
 #pragma once
 #include <curl/curl.h>
+#include <condition_variable>
+
 
 #include "IRequest.h"
 #include <queue>
@@ -17,7 +19,7 @@ private:
 		DownloadData() {offset = 0; }
 		CURL* curl;
 		char* buffer;
-		std::thread threadId;
+		std::thread* threadId;
 		int32_t offset;
 
 		void Reset() { offset = 0; }

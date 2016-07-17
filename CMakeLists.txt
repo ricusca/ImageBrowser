@@ -9,12 +9,12 @@ project (ImageBrowser)
 # Microsoft compiler 
 MESSAGE(WARNING "Currently the only supported version of C++ compiler si Visual C++ 2015 due curl being compiled with it")
 MESSAGE( STATUS "MSVC: " ${CMAKE_CXX_COMPILER_VERSION} )
-MESSAGE( STATUS "MSVC80: " ${MSVC14} )
+MESSAGE( STATUS "MSVC: " ${MSVC14} )
 
 
 # Set compiler flags and options. 
 # Visual Studio warning level to 4 and unwind semantics
-set (CMAKE_CXX_FLAGS "/W4")
+SET (CMAKE_CXX_FLAGS "/W4")
 SET (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 
 #add preprocessor macros
@@ -39,13 +39,25 @@ file(GLOB_RECURSE jsoncpp     ${PROJECT_SOURCE_DIR}/ImageBrowser/jsoncpp/dist/*.
 							  ${PROJECT_SOURCE_DIR}/ImageBrowser/jsoncpp/dist/*.cpp
 							  )
 
+file(GLOB headers               ${PROJECT_SOURCE_DIR}/ImageBrowser/*.h)							  
+							  
 file(GLOB sources             ${PROJECT_SOURCE_DIR}/ImageBrowser/*.cpp)
 
 #group jsoncpp in a separate filter
 SOURCE_GROUP(jsoncpp FILES ${jsoncpp})
 
 #include directories for libs
-LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/ImageBrowser/curl/builds/libcurl-vc14-x86-release-static-ipv6-sspi-winssl/lib
+SET (CURL_LIB "/ImageBrowser/curl/builds/libcurl-vc14-x86-release-static-ipv6-sspi-winssl/lib")
+if ("${MSVC11}" STREQUAL "1")
+	SET(CURL_LIB, "/ImageBrowser/curl/builds/libcurl-vc11-x86-release-static-ipv6-sspi-winssl/lib")
+elseif("${MSVC12}" STREQUAL "1")
+	SET (CURL_LIB "/ImageBrowser/curl/builds/libcurl-vc12-x86-release-static-ipv6-sspi-winssl/lib")
+endif()
+
+MESSAGE( STATUS "CURL_LIB: " "${CURL_LIB}" )
+
+LINK_DIRECTORIES(
+				 ${PROJECT_SOURCE_DIR}${CURL_LIB}
 				 ${PROJECT_SOURCE_DIR}/ImageBrowser/SDL2-2.0.4/lib/x86
 				 ${PROJECT_SOURCE_DIR}/ImageBrowser/SDL2_image-2.0.1/lib/x86
 				 ${PROJECT_SOURCE_DIR}/ImageBrowser/SDL2_ttf-2.0.14/lib/x86				 				
@@ -67,13 +79,7 @@ TARGET_LINK_LIBRARIES(ImageBrowser libcurl_a.lib
 								   SDL2_image.lib
 								   SDL2_ttf.lib
 								   )
-								   
-#xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2-2.0.4\lib\x86\SDL2.dll $(OutputPath)
-#xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2_image-2.0.1\lib\x86\SDL2_image.dll $(OutputPath)
-#xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2_image-2.0.1\lib\x86\libpng16-16.dll $(OutputPath)
-#xcopy /c  /y $(ProjectDir)\ImageBrowser\SDL2_ttf-2.0.14\lib\x86\*.dll $(OutputPath)
-#xcopy /F /R /Y /I $(ProjectDir)\fonts\*.ttf $(OutputPath)\fonts\
-								 
+								   								 
 MESSAGE( STATUS "XXX" ${PROJECT_BINARY_DIR} ) 
 MESSAGE( STATUS "CMAKE_BUILD_TYPE" ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ) 
 

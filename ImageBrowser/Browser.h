@@ -44,6 +44,7 @@ private:
 	bool ReadConfiguration();
 	void DownloadImages();
 	void DrawObject(const std::string& objectName);
+	void ClearImages(int32_t startIndex, int32_t endIndex);
 
 private:
 	static Browser mInstance;

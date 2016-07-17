@@ -26,6 +26,7 @@ public:
 	virtual void SetTextureBlendModeAlpha(const std::string& name) = 0;
 	virtual void SetTextureBlendModeNone(const std::string& name) = 0;;
 	virtual void CleanTextures() = 0;
+	virtual bool ClearTexture(const std::string& name) = 0;
 
 	virtual void DrawBackground(const std::string& name) = 0;
 	virtual void DrawObject(const ObjRenderable& obj, bool clear = false) = 0;

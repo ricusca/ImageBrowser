@@ -27,7 +27,7 @@ HttpClient::HttpClient()
 	{
 		c.curl = curl_easy_init();
 		c.buffer = new char[MAX_IMG_SIZE];
-		c.threadId = std::thread([&, this] { this->Update(c); });
+		c.threadId = new std::thread([&, this] { this->Update(c); });
 	}
 }
 
@@ -110,7 +110,9 @@ void HttpClient::Clean()
 	for (auto& t : mCurls)
 	{
 		m_cv.notify_all();
-		t.threadId.join();
+		t.threadId->join();
+
+		delete t.threadId;
 		delete[] t.buffer;
 		curl_easy_cleanup(t.curl);
 	}		

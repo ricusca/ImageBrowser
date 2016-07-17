@@ -25,6 +25,7 @@ public:
 	void SetTextureBlendModeAlpha(const std::string& name) override; 
 	void SetTextureBlendModeNone(const std::string& name) override;
 	void CleanTextures() override;
+	bool ClearTexture(const std::string& name) override;
 
 	//Object and text rendering
 	void DrawBackground(const std::string& name) override;

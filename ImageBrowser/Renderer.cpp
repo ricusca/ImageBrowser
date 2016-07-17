@@ -208,6 +208,22 @@ void Renderer::CleanTextures()
 	mTextures.clear();
 }
 
+bool Renderer::ClearTexture(const std::string& name)
+{
+	bool bResult = false;
+	//destroy texture by its identifier
+	auto it = mTextures.find(name);
+	if (it != mTextures.end())
+	{
+		SDL_DestroyTexture(it->second);
+		mTextures.erase(name);
+
+		FILE_LOG(logDEBUG) << "TTexture  " << name << " was deleted";
+	}
+
+	return bResult;
+}
+
 void Renderer::DrawBackground(const std::string& name)
 {
 	SDL_RenderClear(mSDLRenderer);

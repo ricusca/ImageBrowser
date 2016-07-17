@@ -9,7 +9,7 @@
 Browser Browser::mInstance;
 
 TextRenderable Browser::mTitle{ "My List with pictures", 420, 50, 24 };
-const Browser::PageNumber Browser::PAGES_TO_CACHE = 5;
+const Browser::PageNumber Browser::PAGES_TO_CACHE = 4;
 const int32_t Browser::PAGE_SIZE = 4;
 
 void Browser::Initialize(const char* pConfiguration)
@@ -201,7 +201,7 @@ void Browser::DownloadImages()
 {
 	//download left and right relative to active page
 	PageNumber startIndex = std::max<PageNumber>(mActivePage - (PAGES_TO_CACHE / 2), 0, [](const PageNumber& lhs, const PageNumber& rhs) { return lhs < rhs; });//don't go beyond 0
-	PageNumber endIndex = std::min<PageNumber>(mActivePage + (PAGES_TO_CACHE / 2), mGrid.size(), [](const PageNumber& lhs, const PageNumber& rhs) { return lhs > rhs; });
+	PageNumber endIndex = startIndex+ PAGES_TO_CACHE;
 	for (PageNumber pageIndex = startIndex; pageIndex < endIndex; ++pageIndex)
 	{
 		for (size_t imageIndex = 0; imageIndex < PAGE_SIZE; ++imageIndex)
@@ -217,6 +217,26 @@ void Browser::DownloadImages()
 
 				if (image.IsReadyForOpen() == false)
 					image.Download();
+			}
+		}
+	}
+
+	ClearImages(0, startIndex);//clear pages on left
+	ClearImages(endIndex, mGrid.size()); // clear pages on right
+}
+
+void Browser::ClearImages(int32_t startIndex, int32_t endIndex)
+{
+	//free the other pages on left
+	for (int pageIndex = startIndex; pageIndex < endIndex; ++pageIndex)
+	{
+		for (size_t imageIndex = 0; imageIndex < PAGE_SIZE; ++imageIndex)
+		{		
+			size_t fileIdx = pageIndex*PAGE_SIZE + imageIndex;
+			if (fileIdx < mImages.size())
+			{
+				mImages.at(fileIdx).Free();
+				mRenderer->ClearTexture(mImages.at(fileIdx).GetName());
 			}
 		}
 	}

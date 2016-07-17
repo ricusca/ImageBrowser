@@ -44,16 +44,12 @@ DownloadFile::DownloadFile(DownloadFile&& file)
 
 DownloadFile::~DownloadFile()
 {
-	delete[] mData;
-	mData = nullptr;
-
-	delete mRequest;
-	mRequest = nullptr;
+	Clean();
 }
 
 void DownloadFile::Download( )
 {
-	if (mstate == FileState::DOWNLOAD_REQUIRED)
+	if (mstate == FileState::DOWNLOAD_REQUIRED || mstate == FileState::IS_FREE)
 	{
 		if (mRequest == nullptr)
 		{
@@ -99,7 +95,22 @@ void DownloadFile::SetFullURL(const char* pURL)
 
 void DownloadFile::Free()
 {
-	mstate = FileState::IS_FREE;
+	if (mstate == FileState::IN_MEMORY)
+	{
+		Clean();
+		mstate = FileState::IS_FREE;
+
+		FILE_LOG(logDEBUG) << "Image data for  " << GetName() << " was deleted";
+	}
+}
+
+void DownloadFile::Clean()
+{
+	delete[] mData;
+	mData = nullptr;
+
+	delete mRequest;
+	mRequest = nullptr;
 }
 
 void DownloadFile::HttpSuccess(const char *pData, uint32_t uDataSize)

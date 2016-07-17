@@ -36,9 +36,12 @@ public:
 	virtual void HttpFailure(int32_t iCode, const char* msg) override;
 
 private:	
+	//probably these should be deleted
 	DownloadFile(DownloadFile&) = delete;
 	DownloadFile& operator=(DownloadFile file) = delete;
 	void Swap(DownloadFile& first, DownloadFile& second);
+
+	void Clean();
 
 private:
 	std::string mFileName;
