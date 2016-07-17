@@ -44,7 +44,7 @@ private:
 	HttpClient();
 	~HttpClient();
 
-	static const int8_t NUM_THREADS;
+	static const size_t NUM_THREADS;
 	static const int64_t MAX_IMG_SIZE;
 
 	static HttpClient* mInstance;

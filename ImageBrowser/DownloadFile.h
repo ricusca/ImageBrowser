@@ -11,10 +11,13 @@ class DownloadFile :public HttpCallback
 public:
 	DownloadFile();
 	DownloadFile(const char* pFileName, const char* pFullUrl);	
+	DownloadFile(DownloadFile&& downloadFie);
 
 	~DownloadFile();
 
 	void Download();
+
+	void RetryDownload();
 
 	bool IsReadyForOpen() const;
 
@@ -33,8 +36,8 @@ public:
 	virtual void HttpFailure(int32_t iCode, const char* msg) override;
 
 private:	
-	DownloadFile(DownloadFile&);
-	DownloadFile& operator=(DownloadFile file);
+	DownloadFile(DownloadFile&) = delete;
+	DownloadFile& operator=(DownloadFile file) = delete;
 	void Swap(DownloadFile& first, DownloadFile& second);
 
 private:
@@ -43,7 +46,9 @@ private:
 	char* mData; //could be a ref count pointer something
 	unsigned int mSize;
 	FileState mstate;
-	IRequest* request;
+	IRequest* mRequest;
+	const int16_t mMaxRetries;
+	int16_t mRetries;
 };
 
 inline bool operator<(const DownloadFile& lhs, const DownloadFile& rhs)

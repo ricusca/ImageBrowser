@@ -85,7 +85,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
@@ -158,7 +158,6 @@ xcopy /F /R /Y /I $(ProjectDir)\fonts\*.ttf $(OutputPath)\fonts\</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ImageBrowser\Browser.cpp" />
-    <ClCompile Include="ImageBrowser\Cell.cpp" />
     <ClCompile Include="ImageBrowser\DownloadFile.cpp" />
     <ClCompile Include="ImageBrowser\HttpClient.cpp" />
     <ClCompile Include="ImageBrowser\jsoncpp\dist\jsoncpp.cpp" />
@@ -169,7 +168,6 @@ xcopy /F /R /Y /I $(ProjectDir)\fonts\*.ttf $(OutputPath)\fonts\</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImageBrowser\Browser.h" />
-    <ClInclude Include="ImageBrowser\Cell.h" />
     <ClInclude Include="ImageBrowser\defines.h" />
     <ClInclude Include="ImageBrowser\DownloadFile.h" />
     <ClInclude Include="ImageBrowser\HttpCallback.h" />
@@ -179,6 +177,7 @@ xcopy /F /R /Y /I $(ProjectDir)\fonts\*.ttf $(OutputPath)\fonts\</Command>
     <ClInclude Include="ImageBrowser\IRequest.h" />
     <ClInclude Include="ImageBrowser\jsoncpp\dist\json\json-forwards.h" />
     <ClInclude Include="ImageBrowser\jsoncpp\dist\json\json.h" />
+    <ClInclude Include="ImageBrowser\log.h" />
     <ClInclude Include="ImageBrowser\Renderer.h" />
     <ClInclude Include="ImageBrowser\RendererFactory.h" />
     <ClInclude Include="ImageBrowser\Request.h" />

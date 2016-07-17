@@ -36,3 +36,9 @@ enum class FileState
 	IN_HDD,
 	INVALID
 };
+
+enum class InputType
+{
+	MOUSE_OVER,
+	MOUSE_CLICK
+};

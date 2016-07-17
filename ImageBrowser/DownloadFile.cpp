@@ -1,7 +1,8 @@
 #include "DownloadFile.h"
 #include "Request.h"
 #include "HttpClient.h"
-#include <iostream>
+
+#include "log.h"
 
 DownloadFile::DownloadFile()
 	:mstate(FileState::DOWNLOAD_REQUIRED)
@@ -9,7 +10,9 @@ DownloadFile::DownloadFile()
 	, mFullUrl()
 	, mData(nullptr)
 	, mSize(0)
-	, request(nullptr)
+	, mRequest(nullptr)
+	, mMaxRetries(3)
+	, mRetries(0)
 {
 
 }
@@ -20,57 +23,55 @@ DownloadFile::DownloadFile(const char* pFileName, const char* pFullUrl)
 	, mFullUrl(pFullUrl)
 	, mData(nullptr)
 	, mSize(0)
-	, request(nullptr)
+	, mRequest(nullptr)
+	, mMaxRetries(3)
+	, mRetries(0)
 {
 }
 
-DownloadFile::DownloadFile( DownloadFile& file)
+DownloadFile::DownloadFile(DownloadFile&& file)
+	:mstate(std::move(file.mstate))
+	, mFileName(std::move(file.mFileName))
+	, mFullUrl(std::move(file.mFullUrl))
+	, mData(std::move(file.mData))
+	, mSize(std::move(file.mSize))
+	, mRequest(std::move(file.mRequest))
+	, mMaxRetries(std::move(file.mMaxRetries))
+	, mRetries(std::move(file.mRetries))
 {
-	mstate = file.mstate;
-	mFileName = file.mFileName;
-	mFullUrl = file.mFullUrl;
-	mData = file.mData; //yes, don't make a new one, share it
-	mSize = file.mSize;
-}
 
-DownloadFile& DownloadFile::operator=(DownloadFile file)
-{
-	Swap(*this,file);
-
-	return *this;
-}
-
-//copy and swap idiom, not very useful here
-void DownloadFile::Swap(DownloadFile& first, DownloadFile& second)
-{
-	using std::swap;
-
-	swap(first.mstate, second.mstate);
-	swap(first.mFileName, second.mFileName);
-	swap(first.mFullUrl, second.mFullUrl);
-	swap(first.mData, second.mData);
-	swap(first.mSize, second.mSize);
 }
 
 DownloadFile::~DownloadFile()
 {
-	delete [] mData;
+	delete[] mData;
 	mData = nullptr;
 
-	delete request;
-	request = nullptr;
+	delete mRequest;
+	mRequest = nullptr;
 }
 
-void DownloadFile::Download()
+void DownloadFile::Download( )
 {
 	if (mstate == FileState::DOWNLOAD_REQUIRED)
 	{
-		if (request == nullptr)
+		if (mRequest == nullptr)
 		{
-			request = new Request(this);
+			mRequest = new Request(this);
 		}
-		request->SetUrl(mFullUrl.c_str());
-		HttpClient::GetInstance()->SubmitRequest(request);
+		mRequest->SetUrl(mFullUrl.c_str());
+		HttpClient::GetInstance()->SubmitRequest(mRequest);
+		mstate = FileState::DOWNLOADING;
+	}
+}
+
+void DownloadFile::RetryDownload()
+{
+	FILE_LOG(logDEBUG) << "Retry download for " << mFileName;
+	if (mRequest != nullptr && mRetries < mMaxRetries)
+	{
+		++mRetries;
+		HttpClient::GetInstance()->SubmitRequest(mRequest);
 		mstate = FileState::DOWNLOADING;
 	}
 }
@@ -103,17 +104,19 @@ void DownloadFile::Free()
 
 void DownloadFile::HttpSuccess(const char *pData, uint32_t uDataSize)
 {
+	FILE_LOG(logINFO) << "Download succeeded for: " << mFileName;
+
 	mData = new char[uDataSize];
 	memcpy_s(mData, uDataSize, pData, uDataSize);
 	mSize = uDataSize;
 	mstate = FileState::IN_MEMORY;
 
-	//std::cout << pData << std::endl;
+	///std::cout << pData << std::endl;
 }
 
 void DownloadFile::HttpFailure(int32_t iCode, const char* msg)
 {
-	std::cerr << "curl_easy_perform() failed: " << msg;
+	FILE_LOG(logERROR) << "Download failed with code: " << iCode << "Message: " << msg;
 
 	mstate = FileState::FAILED_DOWNLOAD;
 

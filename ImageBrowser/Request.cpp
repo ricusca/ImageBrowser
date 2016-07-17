@@ -16,6 +16,7 @@ Request::~Request()
 {
 }
 
+
 bool Request::SetUrl(const char* const url)
 {
 	assert(url != nullptr);

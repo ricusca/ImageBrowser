@@ -1,24 +1,20 @@
 
-#include <iostream>
-#include "Browser.h"
-
 #include <ctime>
+
 #include "SDL.h"
 #include "Timer.h"
+#include "Browser.h"
+#include "log.h"
 
-using std::string;
+const int32_t SCREEN_FPS = 60;
+const int32_t SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
 
-using std::cout;
-using std::endl;
-
-const int SCREEN_FPS = 60;
-const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
-
-int main(int argc, char** argv)
+int main(int32_t argc, char** argv)
 {
-	for (int i = 0; i < argc; ++i)
+	FILELog::ReportingLevel() = FILELog::FromString(argv[2] ? argv[2] : "DEBUG1");
+	for (int32_t i = 0; i < argc; ++i)
 	{
-		printf("arg%d: %s\n", i, argv[i]);
+		FILE_LOG(logINFO) << "arg" << i << ": " << argv[i];
 	}
 	
 	Browser::GetInstance().Initialize(argv[1]);
@@ -36,7 +32,7 @@ int main(int argc, char** argv)
 	Timer loopTimer;
 
 	//Start counting frames per second
-	int countedFrames = 0;
+	int32_t countedFrames = 0;
 	fpsTimer.Start();
 	 
 	while (!quit)
@@ -47,23 +43,42 @@ int main(int argc, char** argv)
 		while (SDL_PollEvent(&e) != 0)
 		{
 			//quit app
-			if (e.type == SDL_QUIT)
+			switch (e.type)
 			{
-				quit = true;
-			}
-			else
-				if (e.type == SDL_MOUSEBUTTONUP)
+				case SDL_QUIT:
+				{
+					quit = true;
+				}
+				break;
+
+				case SDL_MOUSEBUTTONUP:
 				{
 					//Get mouse position
-					int x, y;
+					int32_t x, y;
 					SDL_GetMouseState(&x, &y);
 
-					Browser::GetInstance().HandleInput(x, y);
+					Browser::GetInstance().HandleInput(x, y,InputType::MOUSE_CLICK);
 				}
+				break;
+
+				case SDL_MOUSEMOTION:
+				{
+					//Get mouse position
+					int32_t x, y;
+					SDL_GetMouseState(&x, &y);
+
+					Browser::GetInstance().HandleInput(x, y, InputType::MOUSE_OVER);
+
+					//cout << "Mouse x = " << x << " y = " << y << endl;
+				}
+				break;
+				default:
+					break;
+			}
 		}
 
 		//Calculate fps
-		float avgFPS = countedFrames / (fpsTimer.GetTicks() / 1000.f);
+		//float avgFPS = countedFrames / (fpsTimer.GetTicks() / 1000.f);
 		//std::cerr << avgFPS << std::endl;
 
 		//Update browser state & render 
@@ -73,7 +88,7 @@ int main(int argc, char** argv)
 		++countedFrames;
 
 		//If frame finished early
-		int frameTicks = loopTimer.GetTicks();
+		int32_t frameTicks = loopTimer.GetTicks();
 		if (frameTicks < SCREEN_TICK_PER_FRAME)
 		{
 			//Wait remaining time

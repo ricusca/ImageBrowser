@@ -68,8 +68,9 @@ license you like.
 // End of content of file: LICENSE
 // //////////////////////////////////////////////////////////////////////
 
-
-
+#if defined(_MSC_VER)
+#pragma warning(disable:4702)
+#endif
 
 
 

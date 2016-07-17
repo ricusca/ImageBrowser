@@ -1,12 +1,13 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
-#include <iostream>
 #include "Renderer.h"
 
-const int32_t Renderer::SCREEN_WIDTH = 800;
-const int32_t Renderer::SCREEN_HEIGHT = 600;
+#include "log.h"
+
+const int32_t Renderer::SCREEN_WIDTH = 1024;
+const int32_t Renderer::SCREEN_HEIGHT = 768;
 const SDL_Color Renderer::DEFAULT_TEXT_COLOR{ 255, 10, 10 };
-const SDL_Color Renderer::DEFAULT_CEAR_COLOR{ 255, 255, 255 };
+const SDL_Color Renderer::DEFAULT_CEAR_COLOR{ 0, 0, 0};
 
 Renderer::Renderer()
 	:mWindow(nullptr)
@@ -17,7 +18,7 @@ Renderer::Renderer()
 	//Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
-		std::cerr << "SDL could not initialize! SDL_Error: " << SDL_GetError() << std::endl;
+		FILE_LOG(logERROR) << "SDL could not initialize! SDL_Error: " << SDL_GetError();
 	}
 }
 
@@ -46,7 +47,7 @@ bool Renderer::Initialize()
 	}
 	if (mWindow == nullptr)
 	{
-		std::cerr << "Window could not be created! SDL_Error: " << SDL_GetError() << std::endl;
+		FILE_LOG(logERROR) << "Window could not be created! SDL_Error: " << SDL_GetError();
 		success = false;
 	}
 
@@ -58,27 +59,28 @@ bool Renderer::Initialize()
 
 	if (mSDLRenderer == nullptr)
 	{
-		std::cerr << "Renderer could not be created! SDL Error: " << SDL_GetError() << std::endl;
+		FILE_LOG(logERROR) << "Renderer could not be created! SDL Error: " << SDL_GetError();
 		success = false;
 	}
 
 	//Initialize SDL_img
-	int imgFlags = IMG_INIT_PNG;
+	int32_t imgFlags = IMG_INIT_PNG;
 	if (!(IMG_Init(imgFlags) & imgFlags))
 	{
-		std::cerr << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
+		FILE_LOG(logERROR) << "SDL_image could not initialize! SDL_image Error: " << IMG_GetError();
 		success = false;
 	}
 
 	//Initialize SDL_ttf
 	if (TTF_Init() == -1)
 	{
-		std::cerr << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << std::endl;
+		FILE_LOG(logERROR) << "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError();
 		success = false;
 	}
 
 	if (mFont == nullptr)
 	{
+		//TO DO: change hard coded values
 		SetFontType("./fonts/ANUDI.ttf", 24);
 	}
 
@@ -110,16 +112,21 @@ void Renderer::Update()
 }
 
 //Clear an area
-void Renderer::Clear(int32_t x, int32_t y, int32_t width, int32_t height)
+void Renderer::Clear(const ObjRenderable& renderable)
+{
+	Clear(renderable.xDst, renderable.yDst, renderable.width, renderable.height,renderable.scale);
+}
+
+void Renderer::Clear(int32_t x, int32_t y, int32_t width, int32_t height, float scale)
 {
 	SDL_Rect rect;
 	rect.x = x;
 	rect.y = y;
-	rect.w = width;
-	rect.h = height;
+	rect.w = static_cast<int32_t>(width*scale);
+	rect.h = static_cast<int32_t>(height*scale);
 
 	SDL_SetRenderDrawColor(mSDLRenderer, DEFAULT_CEAR_COLOR.r, DEFAULT_CEAR_COLOR.g, DEFAULT_CEAR_COLOR.b, 255);
-	//SDL_RenderFillRect(mSDLRenderer, &rect);
+	SDL_RenderFillRect(mSDLRenderer, &rect);
 }
 
 //The textures are stored in a map
@@ -132,8 +139,9 @@ void Renderer::LoadTexture(const std::string& name)
 	}
 }
 
-void Renderer::LoadTexture(const std::string& name, char* buff, int32_t size)
+bool Renderer::LoadTexture(const std::string& name, char* buff, int32_t size)
 {	
+	bool bResult = true;
 	if (mTextures.find(name) == mTextures.end())
 	{
 		SDL_RWops *rw = SDL_RWFromMem(buff, size);
@@ -142,13 +150,13 @@ void Renderer::LoadTexture(const std::string& name, char* buff, int32_t size)
 
 		if (texture == nullptr)
 		{
-			std::cerr << "Unable to load texture " << name.c_str() << " SDL Error: " << IMG_GetError() << std::endl;
-			return;
+			FILE_LOG(logERROR) << "Unable to load texture " << name.c_str() << " SDL Error: " << IMG_GetError();
+			bResult = false;
 		}
-
-
-		mTextures.emplace(name, texture);
+		else
+			mTextures.emplace(name, texture);		
 	}
+	return bResult;
 }
 
 void Renderer::SetTextureAlpha(const std::string& name, uint8_t alpha)
@@ -213,10 +221,10 @@ void Renderer::DrawObject(const ObjRenderable& obj, bool clear)
 {
 	if (clear)
 	{
-		this->Clear(obj.xDst, obj.yDst, obj.width, obj.height);
+		this->Clear(obj);
 	}
 
-	LoadTexture(obj.name);
+	//LoadTexture(obj.name);
 
 	auto it = mTextures.find(obj.name);
 	if (it != mTextures.end())
@@ -224,25 +232,25 @@ void Renderer::DrawObject(const ObjRenderable& obj, bool clear)
 		SDL_Texture* texture = it->second;
 		if (texture == nullptr)
 		{
-			std::cerr << "Unable to load image " << obj.name.c_str() << " SDL Error: " << IMG_GetError() << std::endl;
+			FILE_LOG(logERROR) << "Unable to load image " << obj.name.c_str() << " SDL Error: " << IMG_GetError();
 			return;
 		}
 
 		SDL_Rect srcrect{ obj.xSrc, obj.ySrc, obj.width, obj.height };
-		SDL_Rect dstrect{ obj.xDst, obj.yDst, obj.width, obj.height };
+		SDL_Rect dstrect{ obj.xDst, obj.yDst, static_cast<int32_t>(obj.width*obj.scale), static_cast<int32_t>(obj.height*obj.scale) };
 
 		SDL_RenderCopy(mSDLRenderer, texture, &srcrect, &dstrect);
 	}
 }
 
-void Renderer::DrawText(const TextRenderable& txt, bool clear)
+void Renderer::DrawTextFont(const TextRenderable& txt)
 {
 
 	SDL_Surface* surfaceMessage = TTF_RenderText_Blended(mFont, (txt.text + txt.addText).c_str(), DEFAULT_TEXT_COLOR);
 
 	SDL_Texture* message = SDL_CreateTextureFromSurface(mSDLRenderer, surfaceMessage);
 
-	int w, h;
+	int32_t w, h;
 	TTF_SizeText(mFont, txt.text.c_str(), &w, &h);
 
 	//Clear the area
@@ -254,7 +262,7 @@ void Renderer::DrawText(const TextRenderable& txt, bool clear)
 	SDL_FreeSurface(surfaceMessage);
 }
 
-void Renderer::SetFontType(const std::string& name, int size)
+void Renderer::SetFontType(const std::string& name, int32_t size)
 {
 	if (mFont != nullptr)
 	{
@@ -267,6 +275,6 @@ void Renderer::SetFontType(const std::string& name, int size)
 
 	if (mFont == nullptr)
 	{
-		std::cerr << "Failed to load font! SDL_ttf Error: " << TTF_GetError() << std::endl;
+		FILE_LOG(logERROR) << "Failed to load font! SDL_ttf Error: " << TTF_GetError();
 	}
 }

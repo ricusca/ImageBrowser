@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <set>
+#include <unordered_map>
 #include "HttpClient.h"
 #include "IRenderer.h"
 #include "DownloadFile.h"
@@ -32,25 +32,38 @@ public:
 
 	void Update();
 
-	void HandleInput(int32_t x, int32_t y);
+	void HandleInput(int32_t x, int32_t y, InputType inputType);
 
 	void UpdateTitle();
+
+	void UpdateImages();
 
 private:
 	void CheckConfigState();
 	void CheckImagesState();
 	bool ReadConfiguration();
+	void DownloadImages();
+	void DrawObject(const std::string& objectName);
 
 private:
 	static Browser mInstance;
 	
 	DownloadFile				 mConfiguration;
-	std::set<DownloadFile>		 mImages;
+	std::vector<DownloadFile>	 mImages;
 	std::shared_ptr<IRenderer>   mRenderer;
 
-	//static data.. maybe separate this into another class
-	static TextRenderable mTitle;
-
 	State mState;
+	typedef int32_t PageNumber;
+	PageNumber mActivePage;
+	const static PageNumber PAGES_TO_CACHE;
+	const static int32_t PAGE_SIZE;
+
+	//maybe separate all this into another class
+	static TextRenderable mTitle;
+	typedef std::unordered_map< PageNumber, std::vector<ObjRenderable>> Grid; //the vector represents the objects belonging to a page
+	Grid mGrid;
+	ObjRenderable* mSelectedRenderable;
+	
+	ObjRenderable* GetRenderable(int32_t x, int32_t y);
 };
 

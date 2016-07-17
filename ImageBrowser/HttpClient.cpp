@@ -1,17 +1,16 @@
 #include "HttpClient.h"
 
-#include <sstream>
 #include <string>
 #include "HttpCallback.h"
+#include "log.h"
 
-const int8_t HttpClient::NUM_THREADS = 1;
+const size_t HttpClient::NUM_THREADS = 4;
 const int64_t HttpClient::MAX_IMG_SIZE = 150000;
 
 HttpClient* HttpClient::mInstance = nullptr;
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, void *stream) 
 {
-	std::string data((const char*)ptr, (size_t)size * nmemb);
 	HttpClient::DownloadData* d = reinterpret_cast<HttpClient::DownloadData*>(stream);
 
 	memcpy_s(d->buffer+d->offset, HttpClient::MAX_IMG_SIZE, ptr, size * nmemb);
@@ -52,10 +51,12 @@ HttpClient* HttpClient::Initialize()
 	return mInstance;
 }
 
+//producer -- add requests in the queue. No need for multiple producers
 void HttpClient::SubmitRequest(IRequest* request)
 {
 	std::lock_guard<std::mutex> lock(mMutex);
 
+	FILE_LOG(logDEBUG) << "Request for " << request->GetUrl();
 	mRequests.push(request);
 
 	m_cv.notify_all();
@@ -71,7 +72,10 @@ void HttpClient::Update(DownloadData& downloadData)
 		
 		IRequest* request = nullptr;
 		std::unique_lock<std::mutex> lock(mMutex);
-		m_cv.wait(lock, [this]() {return mRequests.size() > 0; });
+		m_cv.wait(lock, [this]() {return mRequests.size() > 0 || mThreadTerminate; });
+
+		if (mThreadTerminate)	break;
+		
 		request = mRequests.front();
 		mRequests.pop();
 		lock.unlock();
@@ -89,17 +93,11 @@ void HttpClient::Update(DownloadData& downloadData)
 		/* Check for errors */
 		if (res != CURLE_OK) 
 		{
-			request->GetCallback()->HttpFailure(static_cast<int>(res), curl_easy_strerror(res));
+			request->GetCallback()->HttpFailure(static_cast<int32_t>(res), curl_easy_strerror(res));
 		}
 		else
 		{
 			request->GetCallback()->HttpSuccess(downloadData.buffer, downloadData.offset);
-
-			FILE * pFile;
-
-			fopen_s(&pFile, "myfile1.png", "wb");
-			fwrite(downloadData.buffer, sizeof(char), downloadData.offset, pFile);
-			fclose(pFile);
 		}
 		
 	}
@@ -111,6 +109,7 @@ void HttpClient::Clean()
 	mThreadTerminate = true;
 	for (auto& t : mCurls)
 	{
+		m_cv.notify_all();
 		t.threadId.join();
 		delete[] t.buffer;
 		curl_easy_cleanup(t.curl);
