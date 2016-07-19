@@ -187,7 +187,7 @@ void Browser::CheckImagesState()
 				f.RetryDownload();
 			}
 			DrawObject(f.GetName());
-			//f.Free(); //optimize for memory..later
+			f.Free(); //optimize for memory..NOW!!!
 		}
 	}
 
