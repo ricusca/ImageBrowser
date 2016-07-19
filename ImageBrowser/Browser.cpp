@@ -187,7 +187,7 @@ void Browser::CheckImagesState()
 				f.RetryDownload();
 			}
 			DrawObject(f.GetName());
-			f.Free(); //optimize for memory..NOW!!!
+			//f.Free(); //optimize for memory..actually by freeing this uses less memory but makes a lot of unnecessary downloads(with the curent logic)
 		}
 	}
 
